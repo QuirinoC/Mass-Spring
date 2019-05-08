@@ -1,0 +1,156 @@
+
+<head>
+<title>Proyecto</title>
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+
+<style>
+  font-family: 'Roboto', sans-serif;
+</style>
+</head>
+<body>
+  <center>
+    <form id="data">
+    K:<br>
+      <input id="k_value" type="text" name="k_value"><br>
+      Numero de resortes:<br>
+      <input id="springs" type="text" name="springs"><br>
+      Masa (kg):<br>
+      <input id="mass" type="text" name="mass"><br>
+      
+    </form>
+    <button id="add">Agregar masa</button>
+    <button id="reset">Reiniciar</button>
+    <button id="calculate">Calcular</button>
+    <p id="text_data"></p>
+
+  </center>
+
+
+  <script>
+//Set default k value as global
+ var k = 1
+
+ //const url='http://0.0.0.0:5000';
+const url = "https://thawing-coast-64365.herokuapp.com/";
+
+function create_zeros(n) {
+	m = []
+	for(var i = 0; i < n; i++) {
+		tmp  = []
+    	for (var j = 0; j < n; j++) {
+			tmp.push(0)
+		}
+		m.push(tmp)
+	}
+	return m
+}
+
+function fill_matrix(v, M) {
+	for(var i = 0; i < v.length; i++) {
+		M[i][i] = v[i][0]
+		if (i > 0) {
+			M[i][i-1] = -v[i][0]
+		}
+		if (i < v.length-1) {
+			M[i][i] += v[i+1][0]
+			M[i][i+1] = -v[i+1][0]
+		}
+	}
+}
+
+
+function print_data (arr) {
+    r = ""
+    arr.forEach((e) => {
+      r += "Springs: " + e[0] + " Mass: " + e[1] + "\n"
+    });
+    return r
+}
+
+function get_mass(data) {
+	r = []
+	data.forEach((e) => {
+		r.push(e[1] * 1)// * 9.81)
+	});
+	return r
+}
+
+  data = []
+
+  $("#add").click( () => {
+    if ($("#springs").val() != "" && $("#mass").val() != "") {
+
+      k = Number($("#k_value").val())
+
+      var springs = k * Number($("#springs").val())
+      var mass = k * Number($("#mass").val())
+      data.push([springs, mass])
+
+      
+
+      $("#springs").val("")
+      $("#mass").val("")
+      $("#text_data").text(
+        print_data(data)
+      )
+    }
+    
+  });
+
+  $("#reset").click( () => {
+
+      $("#springs").val("")
+      $("#mass").val("")
+      $("#text_data").text(
+        ""
+      )
+      data = []
+    
+    
+  });
+  //"
+    $("#calculate").click( () => {
+    
+      M = create_zeros(data.length)
+      fill_matrix(data, M)
+      B = get_mass(data)
+
+      const Http = new XMLHttpRequest();
+      Http.open("POST", url);
+      Http.setRequestHeader("Access-Control-Allow-Origin", "*");
+      Http.setRequestHeader("Content-Type", "application/json");
+      Http.send(
+          JSON.stringify({
+          "m" : M,
+          "b" : B
+          })
+      );
+      Http.onreadystatechange=(e)=>{
+        tmp = ""
+        c = 0
+        r = JSON.parse(Http.response)
+        r.forEach(x => {
+          tmp += "x" + c  + ": " + x.toFixed(4) + "\n"
+          c+=1
+        });
+        $("#text_data").text(
+          tmp
+        )
+        data = []
+        console.log(tmp)
+        console.log(r)
+      }
+      (e)=>{
+      
+      }
+    });
+
+
+
+  </script>
+  
+
+</body>
+
